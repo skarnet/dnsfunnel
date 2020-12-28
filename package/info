@@ -1,0 +1,4 @@
+package=dnsfunnel
+version=0.0.1.0
+category=web
+package_macro_name=DNSFUNNEL

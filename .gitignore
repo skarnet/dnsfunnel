@@ -1,0 +1,10 @@
+*.o
+*.a
+*.lo
+*.so
+*.so.*
+/config.mak
+/src/include/dnsfunnel/config.h
+/dnsfunnel-daemon
+/dnsfunneld
+/dnsfunnel-translate

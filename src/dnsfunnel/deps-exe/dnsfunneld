@@ -1,0 +1,4 @@
+dnsfunneld_answer.o
+dnsfunneld_process.o
+-ls6dns
+-lskarnet

@@ -1,0 +1,27 @@
+dnsfunnel - a small local DNS forwarder
+---------------------------------------
+
+ dnsfunnel is a DNS forwarder (aka, a DNS cache without a
+cache) meant to listen to local requests and forward them to
+real caches. The point is to move from a
+"list several caches in /etc/resolv.conf" model to a
+"only list 127.0.0.1 in /etc/resolv.conf" one, which has
+architectural advantages and isolates the libc's stub resolver
+from various DNS implementation infelicities.
+
+ See https://skarnet.org/software/dnsfunnel/ for details.
+
+
+* Installation
+  ------------
+
+ See the INSTALL file.
+
+
+* Contact information
+  -------------------
+
+ Laurent Bercot <ska-skaware at skarnet.org>
+
+ Please use the <skaware at list.skarnet.org> mailing-list for
+questions about dnsfunnel.

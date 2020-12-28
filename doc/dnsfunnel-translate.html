@@ -1,0 +1,70 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>dnsfunnel: the dnsfunnel-translate program</title>
+    <meta name="Description" content="dnsfunnel: the dnsfunnel-translate program" />
+    <meta name="Keywords" content="dnsfunnel translate /etc/resolv.conf nameserver cache address" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">dnsfunnel</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>dnsfunnel-translate</tt> program </h1>
+
+<p>
+<tt>dnsfunnel-translate</tt> translates a file in <tt>resolv.conf</tt>
+format to a file in <a href="dnsfunneld.html">dnsfunneld</a> format.
+</p>
+
+<h2> Interface </h2>
+
+<pre>
+     dnsfunnel-translate [ -i inputfile ] [ -o outputfile ] [ -x ignoredip ]
+</pre>
+
+<ul>
+ <li> dnsfunnel-translate opens <em>inputfile</em> and parses it. It reads
+and processes lines beginning with <tt>nameserver</tt> followed by an IP
+address (v4 or v6). It ignores other lines. </li>
+ <li> It writes the IP addresses, without the <tt>nameserver</tt> keyword,
+to <tt>outputfile</tt>, one per line. </li>
+ <li> If a <tt>nameserver</tt> address is <em>ignoredip</em>, it does not
+get printed to <tt>outputfile</tt>
+ <li> dnsfunnel-translate exits 0 when it has finished processing
+<em>inputfile</em>. </li>
+</ul>
+
+<h2> Exit codes </h2>
+
+<ul>
+ <li> 0: success </li>
+ <li> 1: no suitable IP found in the input file </li>
+ <li> 100: wrong usage </li>
+ <li> 111: system call failed </li>
+</ul>
+
+<h2> Options </h2>
+
+<ul>
+ <li> <tt>-i&nbsp;<em>inputfile</em></tt>&nbsp;: process <em>inputfile</em>.
+Default is <tt>/etc/resolv.conf</tt>. </li>
+ <li> <tt>-o&nbsp;<em>outputfile</em></tt>&nbsp;: write the result to
+<em>outputfile</em>. Default is <tt>/run/dnsfunnel-caches</tt>, or <em>file</em>
+if the <tt>--with-cachelist=<em>file</em></tt> option has been given to the
+configure script at build time. </li>
+ <li> <tt>-x&nbsp;<em>ignoredip</em></tt>&nbsp;: ignore the <em>ignoredip</em>
+IPv4 address if it shows up as a <tt>nameserver</tt> in <em>inputfile</em>.
+Default is <tt>127.0.0.1</tt>. The point of this option is to avoid copying
+to <tt>outputfile</tt> the IPv4 address that the
+<a href="dnsfunnel-daemon.html">dnsfunnel-daemon</a> daemon will be bound to. </li>
+</ul>
+
+</body>
+</html>

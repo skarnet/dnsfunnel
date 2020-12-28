@@ -1,0 +1,160 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>dnsfunnel: the dnsfunnel-daemon program</title>
+    <meta name="Description" content="dnsfunnel: the dnsfunnel-daemon program" />
+    <meta name="Keywords" content="dnsfunnel daemon /etc/resolv.conf local cache resolver 127.0.0.1" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">dnsfunnel</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>dnsfunneld</tt> program </h1>
+
+<p>
+<tt>dnsfunneld</tt> is a small DNS forwarder daemon. It receives
+DNS queries from clients, then forwards them to one or more DNS caches.
+It collects the responses and forwards them back to the clients. Depending
+on the options it is given, it may perform light processing on the
+queries, the responses, or both.
+</p>
+
+<h2> Interface </h2>
+
+<pre>
+     dnsfunneld [ -v verbosity ] [ -d notif ] [ -o ops ] cachelist
+</pre>
+
+<ul>
+ <li> dnsfunneld reads the <em>cachelist</em> file, expecting to find
+a list of IP (v4 or v6) addresses, one per line. These addresses are the
+DNS caches it will forward the queries to. </li>
+ <li> dnsfunneld expects to have a bound UDP inet domain socket as
+its standard input. It expects to receive packets no more than 512
+bytes long, only containing DNS normal queries (QUERY) for the IN
+class. </li>
+ <li> Depending on <em>ops</em>, dnsfunneld may send additional queries
+to the caches listed in <em>cachelist</em>. It handles the answers
+internally: the additional queries are invisible to clients. </li>
+ <li> dnsfunneld is a long-lived process. </li>
+</ul>
+
+<h2> Signals </h2>
+
+<ul>
+ <li> SIGHUP: read the <em>cachelist</em> file again, updating its
+in-memory cache list. In-flight queries are still handled by the old
+list; the new list will only apply for queries arriving after the SIGHUP. </li>
+ <li> SIGTERM: enter lame-duck mode, do not accept any more queries. When
+all in-flight queries have been answered, exit 0.
+</ul>
+
+<h2> Exit codes </h2>
+
+<ul>
+ <li> 0: SIGTERM received and all in-flight queries have been answered </li>
+ <li> 100: wrong usage </li>
+ <li> 111: system call failed </li>
+</ul>
+
+<h2> Options </h2>
+
+<ul>
+ <li> <tt>-v&nbsp;<em>verbosity</em></tt>&nbsp;: verbosity.
+Default is 1. 0 suppresses warning messages. Higher values may give more
+informational messages in the future. </li>
+ <li> <tt>-d&nbsp;<em>notif</em></tt>&nbsp;: readiness notification. When
+dnsfunneld is ready to process queries, write a newline to file descriptor
+<em>notif</em>. <em>notif</em> must be 3 or greater. Default is no notification
+at all. </li>
+ <li> <tt>-o&nbsp;<em>ops</em></tt>&nbsp;: perform various operations on
+queries. <em>ops</em> is a decimal integer that is treated as a bitfield.
+Default is 0. Operations are listed below. </li>
+</ul>
+
+<h2> DNS forwarding behaviour </h2>
+
+<ul>
+ <li> When it receives a query, dnsfunneld forwards it to the first DNS cache
+in the list it has read from the <em>cachelist</em> file. </li>
+ <li> If it receives a response with the TC bit, it resends the query over TCP. </li>
+ <li> If it receives a suitable response within a given time frame, it forwards
+it to the client. </li>
+ <li> On SERVFAIL, or after a timeout of 1 second, it gives up and sends the
+query to the next DNS cache in its list. (If the first cache answers after the time
+frame, the answer is dropped.)
+ <li> If dnsfunneld reaches the end of its cache list, it retries the whole
+procedure starting at the beginning of the list, but with a timeout of 3 seconds.
+Caches that returned a SERVFAIL are crossed off the list for that query. </li>
+ <li> If the second pass fails again, dnsfunneld tries again with a timeout of
+11 seconds, then with a timeout of 45 seconds. If all of this fails, it returns
+a SERVFAIL to the client. </li>
+ <li> A machine should not use a DNS cache that is too far away. In normal operation,
+a timeout of 1 second should be more than enough for a cache to answer, if it already
+has the answer. If the answer is absent from all caches and it takes them more than
+1 second to resolve the query, the answer will be obtained by dnsfunneld in the second
+pass. Realistically, the only cases when caches that are not at the top of the list
+are used are:
+ <ul>
+  <li> obscure DNS queries, not likely to be in the caches, and that will take
+time to resolve; </li>
+  <li> or the first cache has really gone to lunch. </li>
+ </ul>
+</ul>
+
+<h2> dnsfunneld operations </h2>
+
+<p>
+ <em>ops</em> is an integer used as a bitfield. Depending on which bits are set,
+various operations are performed on queries or answers, slightly modifying the
+behaviour described above.
+</p>
+
+<ul>
+ <li> bit 0: activate truncation. If a DNS response is more than 510 bytes
+long, dnsfunneld will truncate the <em>last</em> resource records in the response,
+until it fits into 510 bytes and can be given to the client in a UDP packet.
+The structure of a DNS packet makes it so the RRs are listed in order of
+decreasing importance, so keeping as many RRs as will fit in 510 bytes
+without reordering them is the natural way of truncating a response. </li>
+ <li> bit 1: activate workaround for some servers that incorrectly report
+NXDOMAIN when they're asked for an AAAA record, and no such record exists
+for the domain but an A record exists. When that bit is set in <em>ops</em>,
+for every A or AAAA query dnsfunneld receives and forwards, it also sends
+an additional AAAA or A query for the same domain. If the main query returns
+NXDOMAIN, dnsfunneld waits for the response to the auxiliary query: if this
+response is not NXDOMAIN, then dnsfunneld answers NODATA to the client instead
+of NXDOMAIN. Be aware that activating this workaround can practically double
+the number of queries sent to the DNS caches, and may cause additional delays
+before the clients get their answers. </li>
+</ul>
+
+<h2> Notes </h2>
+
+<ul>
+ <li> The point of dnsfunneld is to work around ill-designed or unreliable
+client setups with several motley <tt>nameserver</tt> entries in
+<tt>/etc/resolv.conf</tt>. By converting those entries to a cache list
+instead (via the <a href="dnsfunnel-translate.html">dnsfunnel-translate</a>
+program), running dnsfunneld on 127.0.0.1, and enforcing a policy of one
+single <tt>nameserver 127.0.0.1</tt> entry in <tt>/etc/resolv.conf</tt>,
+the setup can be made more reliable and more consistent. </li>
+ <li> Such a policy can be automated, for instance, by listening to
+changes on the <tt>/etc/resolv.conf</tt> file (via inotify or kqueue,
+depending on your system) and immediately calling
+<a href="dnsfunnel-translate.html">dnsfunnel-translate</a>, sending
+a SIGHUP to dnsfunneld, and forcefully overwriting <tt>/etc/resolv.conf</tt>. </li>
+ <li> It is easy to send a SIGHUP to dnsfunneld even without knowing its
+pid, if it is run under a process supervision system such as
+<a href="//skarnet.org/software/s6/">s6</a>. </li>
+</ul>
+
+</body>
+</html>
