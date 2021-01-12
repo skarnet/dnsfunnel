@@ -36,13 +36,13 @@
 
 #include "dnsfunneld.h"
 
-#define USAGE "dnsfunneld [ -v verbosity ] [ -1 ] [ -U | -u uid -g gid ] [ -i ip:port ] [ -R root ] [ -b bufsize ] [ -T | -t ] [ -N | -n ]"
+#define USAGE "dnsfunneld [ -v verbosity ] [ -1 ] [ -U | -u uid -g gid ] [ -i ip:port ] [ -R root ] [ -b bufsize ] [ -t globaltimeout ] [ -X | -x ] [ -N | -n ]"
 #define dieusage() strerr_dieusage(100, USAGE)
 
 #define DNSFUNNELD_INPUT_MAX 64
 
 unsigned int verbosity = 1 ;
-static tain_t globaltto = TAIN_INFINITE_RELATIVE ;
+static tain_t globaltto ;
 static int cont = 1 ;
 static s6dns_ip46list_t cachelist ;
 static uint32_t ops = 0 ;
@@ -169,12 +169,13 @@ int main (int argc, char const *const *argv)
     int fd ;
     char ip[4] ;
     size_t pos ;
+    unsigned int t = 0 ;
     uint16_t port ;
     subgetopt_t l = SUBGETOPT_ZERO ;
 
     for (;;)
     {
-      int opt = subgetopt_r(argc, argv, "v:1Uu:g:i:R:b:TtNn", &l) ;
+      int opt = subgetopt_r(argc, argv, "v:1Uu:g:i:R:b:t:XxNn", &l) ;
       if (opt == -1) break ;
       switch (opt)
       {
@@ -186,8 +187,9 @@ int main (int argc, char const *const *argv)
         case 'i' : ipport = l.arg ; break ;
         case 'R' : root = l.arg ; break ;
         case 'b' : if (!uint0_scan(l.arg, &bufsize)) dieusage() ; break ;
-        case 'T' : ops &= ~1 ; break ;
-        case 't' : ops |= 1 ; break ;
+        case 't' : if (!uint0_scan(l.arg, &t)) dieusage() ; break ;
+        case 'X' : ops &= ~1 ; break ;
+        case 'x' : ops |= 1 ; break ;
         case 'N' : ops &= ~2 ; break ;
         case 'n' : ops |= 2 ; break ;
         default : dieusage() ;
@@ -195,6 +197,8 @@ int main (int argc, char const *const *argv)
     }
     argc -= l.ind ; argv += l.ind ;
 
+    if (t) tain_from_millisecs(&globaltto, t) ;
+    else globaltto = tain_infinite_relative ;
     pos = ip4_scan(ipport, ip) ;
     if (!pos) dieusage() ;
     if (ipport[pos] != ':') dieusage() ;
@@ -352,17 +356,20 @@ int main (int argc, char const *const *argv)
     {
       dfquery_t *q = QUERY(i) ;
       uint32_t k = q->next ;
-      int r = s6dns_engine_event_g(&q->dt) ;
-      if (r)
+      if (x[q->xindex].events && x[q->xindex].revents)
       {
-        if (r > 0) query_process_response_success(ops, q) ;
-        else query_process_response_failure(ops, q) ;
-        QUERY(j)->next = k ;
-        if (r > 0) s6dns_engine_free(&q->dt) ;
-        else stralloc_free(&q->dt.sa) ;
-        gensetdyn_delete(&queries, i) ;
+        int r = s6dns_engine_event_g(&q->dt) ;
+        if (r)
+        {
+          if (r > 0) query_process_response_success(ops, q) ;
+          else query_process_response_failure(ops, q) ;
+          QUERY(j)->next = k ;
+          if (r > 0) s6dns_engine_free(&q->dt) ;
+          else stralloc_free(&q->dt.sa) ;
+          gensetdyn_delete(&queries, i) ;
+        }
+        else j = i ;
       }
-      else j = i ;
       i = k ;
     }
 

@@ -29,7 +29,7 @@ queries, the responses, or both.
 <h2> Interface </h2>
 
 <pre>
-     dnsfunneld [ -v <em>verbosity</em> ] [ -1 ] [ -U | -u <em>uid</em> -g <em>gid</em> ] [ -i <em>ip</em>:<em>port</em> ] [ -R <em>root</em> ] [ -b <em>bufsize</em> ] [ -T | -t ] [ -N | -n ]
+     dnsfunneld [ -v <em>verbosity</em> ] [ -1 ] [ -U | -u <em>uid</em> -g <em>gid</em> ] [ -i <em>ip</em>:<em>port</em> ] [ -R <em>root</em> ] [ -b <em>bufsize</em> ] [ -t <em>globaltimeout</em> ] [ -X | -x ] [ -N | -n ]
 </pre>
 
 <ul>
@@ -97,6 +97,10 @@ to <tt>-R</tt>. </li>
  <li> <tt>-b&nbsp;<em>bufsize</em></tt>&nbsp;: try and reserve a kernel buffer
 size of <em>bufsize</em> bytes for the socket. The default is whatever the
 default is for your kernel. </li>
+ <li> <tt>-t&nbsp;<em>globaltimeout</em></tt>&nbsp;: maximum resolution time.
+If a query takes more than <em>globaltimeout</em> milliseconds to resolve,
+abandon it and return a SERVFAIL to the client. Default is 0, meaning infinite:
+no global timeout is set. </li>
 </ul>
 
 <p>
@@ -105,9 +109,9 @@ features. See below for the detail of operations.
 </p>
 
 <ul>
- <li> <tt>-T</tt>&nbsp;: Do not activate truncation of responses. This is
+ <li> <tt>-X</tt>&nbsp;: Do not activate truncation of responses. This is
 the default. </li>
- <li> <tt>-t</tt>&nbsp;: If a DNS response is bigger than 510 bytes,
+ <li> <tt>-x</tt>&nbsp;: If a DNS response is bigger than 510 bytes,
 truncate its last resource records until it fits into 510 bytes and can
 be sent in a UDP packet. </li>
  <li> <tt>-N</tt>&nbsp;: Do not activate NXDOMAIN workaround. This is the

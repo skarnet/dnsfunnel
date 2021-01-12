@@ -20,16 +20,15 @@ struct dfanswer_s
 {
   char buf[512] ;
   char ip[4] ;
-  uint16_t len ;
   uint16_t port ;
 } ;
-#define DFANSWER_ZERO { .buf = { 0 }, .ip = "\0\0\0", .len = 0, .port = 0 }
+#define DFANSWER_ZERO { .buf = { 0 }, .ip = "\0\0\0", .port = 0 }
 
 static genqdyn dfanswers = GENQDYN_INIT(dfanswer_t, 1, 8) ;
 
 size_t dfanswer_pending ()
 {
-  return genqdyn_n(&dfanswers) ;
+  return (dfanswers.queue.len - dfanswers.head) / dfanswers.esize ;
 }
 
 static void dfanswer_push (char const *s, size_t len, uint32_t ip, uint16_t port)
@@ -41,9 +40,9 @@ static void dfanswer_push (char const *s, size_t len, uint32_t ip, uint16_t port
   }
   else
   {
-    dfanswer_t ans = { .len = len, .port = port } ;
-    uint16_pack_big(ans.buf, ans.len) ;
-    memcpy(ans.buf, s+2, len) ;
+    dfanswer_t ans = { .port = port } ;
+    uint16_pack_big(ans.buf, len) ;
+    memcpy(ans.buf + 2, s+2, len) ;
     uint32_pack_big(ans.ip, ip) ;
     if (!genqdyn_push(&dfanswers, &ans))
       strerr_diefu1sys(111, "queue answer to client") ;
@@ -55,7 +54,9 @@ int dfanswer_flush ()
   while (dfanswer_pending())
   {
     dfanswer_t *ans = GENQDYN_PEEK(dfanswer_t, &dfanswers) ;
-    if (socket_send4(0, ans->buf, ans->len, ans->ip, ans->port) < 0)
+    uint16_t len ;
+    uint16_unpack_big(ans->buf, &len) ;
+    if (socket_send4(0, ans->buf, len, ans->ip, ans->port) < 0)
       return error_isagain(errno) ? (errno = 0, 0) : -1 ;
     genqdyn_pop(&dfanswers) ;
   }
