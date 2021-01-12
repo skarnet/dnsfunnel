@@ -56,14 +56,12 @@ get printed to <tt>outputfile</tt>
  <li> <tt>-i&nbsp;<em>inputfile</em></tt>&nbsp;: process <em>inputfile</em>.
 Default is <tt>/etc/resolv.conf</tt>. </li>
  <li> <tt>-o&nbsp;<em>outputfile</em></tt>&nbsp;: write the result to
-<em>outputfile</em>. Default is <tt>/run/dnsfunnel-caches</tt>, or <em>file</em>
-if the <tt>--with-cachelist=<em>file</em></tt> option has been given to the
-configure script at build time. </li>
+<em>outputfile</em>. Default is <tt>/run/dnsfunnel/root/caches</tt>. </li>
  <li> <tt>-x&nbsp;<em>ignoredip</em></tt>&nbsp;: ignore the <em>ignoredip</em>
 IPv4 address if it shows up as a <tt>nameserver</tt> in <em>inputfile</em>.
 Default is <tt>127.0.0.1</tt>. The point of this option is to avoid copying
 to <tt>outputfile</tt> the IPv4 address that the
-<a href="dnsfunnel-daemon.html">dnsfunnel-daemon</a> daemon will be bound to. </li>
+<a href="dnsfunneld.html">dnsfunneld</a> daemon will be bound to. </li>
 </ul>
 
 </body>

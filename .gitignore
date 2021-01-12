@@ -5,6 +5,5 @@
 *.so.*
 /config.mak
 /src/include/dnsfunnel/config.h
-/dnsfunnel-daemon
 /dnsfunneld
 /dnsfunnel-translate

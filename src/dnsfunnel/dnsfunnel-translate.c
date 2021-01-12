@@ -12,8 +12,6 @@
 
 #include <s6-dns/s6dns-constants.h>
 
-#include <dnsfunnel/config.h>
-
 #define USAGE "dnsfunnel-translate [ -i resolvconf ] [ -o cachelist ] [ -x ignoredip ]"
 #define dieusage() strerr_dieusage(100, USAGE)
 
@@ -48,7 +46,7 @@ int main (int argc, char const *const *argv)
 {
   ip46_t list[S6DNS_MAX_SERVERS] = { IP46_ZERO } ;
   char const *resolvconf = "/etc/resolv.conf" ;
-  char const *cachelist = DNSFUNNEL_DEFAULT_CACHELIST ;
+  char const *cachelist = "/run/dnsfunnel/root/caches" ;
   char ignore[4] = "\177\0\0\1" ;
   size_t n ;
   PROG = "dnsfunnel-translate" ;

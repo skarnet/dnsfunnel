@@ -1,5 +1,4 @@
 BIN_TARGETS := \
-dnsfunnel-daemon \
 dnsfunneld \
 dnsfunnel-translate
 

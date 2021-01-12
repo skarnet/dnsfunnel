@@ -45,8 +45,6 @@ Optional features:
   --enable-slashpackage[=ROOT]  assume /package installation at ROOT [disabled]
   --enable-absolute-paths       do not rely on PATH to access this package's binaries,
                                   hardcode absolute BINDIR/foobar paths instead [disabled]
-
-  --with-cachelist=FILE         use FILE as default cache list [/run/dnsfunnel-caches]
 EOF
 exit 0
 }
@@ -159,7 +157,6 @@ addlibdpath=''
 vpaths=''
 vpathd=''
 build=
-cachelist=/run/dnsfunnel-caches
 
 for arg ; do
   case "$arg" in
@@ -190,7 +187,6 @@ for arg ; do
     --disable-slashpackage) sproot= ; slashpackage=false ;;
     --enable-absolute-paths|--enable-absolute-paths=yes) abspath=true ;;
     --disable-absolute-paths|--enable-absolute-paths=no) abspath=false ;;
-    --with-cachelist=*) cachelist=${arg#*=} ;;
     --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
     --host=*|--target=*) target=${arg#*=} ;;
     --build=*) build=${arg#*=} ;;
@@ -467,8 +463,6 @@ else
   echo "#define ${package_macro_name}_EXTBINPREFIX \"\""
 fi
 echo "#define ${package_macro_name}_LIBEXECPREFIX \"$libexecdir/\""
-echo
-echo "#define ${package_macro_name}_DEFAULT_CACHELIST  \"$cachelist\""
 echo
 echo "#endif"
 exec 1>&3 3>&-
