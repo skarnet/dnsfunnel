@@ -159,7 +159,7 @@ int main (int argc, char const *const *argv)
   PROG = "dnsfunneld" ;
 
   {
-    unsigned int bufsize = 131072 ;
+    unsigned int bufsize = 0 ;
     int flagU = 0 ;
     uid_t uid = -1 ;
     gid_t gid = -1 ;
@@ -366,7 +366,7 @@ int main (int argc, char const *const *argv)
       i = k ;
     }
 
-    if (x[0].revents & IOPAUSE_READ)
+    if (x[1].revents & IOPAUSE_READ)
     {
       uint32_t n = DNSFUNNELD_INPUT_MAX ;
       while (n--)
