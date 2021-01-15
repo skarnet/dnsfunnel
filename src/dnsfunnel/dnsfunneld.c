@@ -122,12 +122,14 @@ void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, uint32_t i
     .id = id,
     .dt = S6DNS_ENGINE_ZERO
   } ;
+  s6dns_domain_t dd = *d ;
   tain_t deadline ;
   uint32_t i ;
   if (!gensetdyn_new(&queries, &i))
     strerr_diefu1sys(111, "create new query") ;
+  s6dns_domain_encode(&dd) ;
   tain_add_g(&deadline, &globaltto) ;
-  if (!s6dns_engine_init_g(&q.dt, &cachelist, S6DNS_O_RECURSIVE, d->s, d->len, qtype, &deadline))
+  if (!s6dns_engine_init_g(&q.dt, &cachelist, S6DNS_O_RECURSIVE, dd.s, dd.len, qtype, &deadline))
     strerr_diefu1sys(111, "start new query") ;
   *QUERY(i) = q ;
   QUERY(sentinel)->next = i ;

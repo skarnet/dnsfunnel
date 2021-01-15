@@ -54,7 +54,7 @@ static inline unsigned int truncate_packet (char *s, unsigned int olen)
     unsigned int tmp = pos ;
     if (!s6dns_message_parse_getrr(&rr, s, olen, &tmp)) return 0 ;
     section = s6dns_message_parse_next(&newcounts, &rr, s, olen, &tmp) ;
-    if (tmp > 510)
+    if (tmp > 512)
     {
       hdr.counts.qd -= counts.qd ;
       hdr.counts.an -= counts.an ;
@@ -126,7 +126,7 @@ void query_process_response_failure (uint32_t ops, dfquery_t const *q)
 void query_process_response_success (uint32_t ops, dfquery_t const *q)
 {
   if (ops & 2 && q->procid && input_event(q, 1 + !isnxdomain(q))) return ;
-  if (ops & 1 && s6dns_engine_packetlen(&q->dt) > 510)
+  if (ops & 1 && s6dns_engine_packetlen(&q->dt) > 512)
   {
     unsigned int len = truncate_packet(s6dns_engine_packet(&q->dt), s6dns_engine_packetlen(&q->dt)) ;
     if (!len) dfanswer_fail(q) ;

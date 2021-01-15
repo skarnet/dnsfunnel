@@ -1,5 +1,7 @@
 /* ISC license. */
 
+#define DEBUG
+
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -8,44 +10,35 @@
 #include <skalibs/uint32.h>
 #include <skalibs/error.h>
 #include <skalibs/strerr2.h>
-#include <skalibs/genqdyn.h>
+#include <skalibs/stralloc.h>
 #include <skalibs/socket.h>
 
 #include <s6-dns/s6dns-message.h>
 
 #include "dnsfunneld.h"
 
-typedef struct dfanswer_s dfanswer_t, *dfanswer_t_ref ;
-struct dfanswer_s
-{
-  char buf[512] ;
-  char ip[4] ;
-  uint16_t port ;
-} ;
-#define DFANSWER_ZERO { .buf = { 0 }, .ip = "\0\0\0", .port = 0 }
-
-static genqdyn dfanswers = GENQDYN_INIT(dfanswer_t, 1, 8) ;
+static stralloc q = STRALLOC_ZERO ;
+static size_t head = 0 ;
 
 size_t dfanswer_pending ()
 {
-  return (dfanswers.queue.len - dfanswers.head) / dfanswers.esize ;
+  return q.len - head ;
 }
 
 static void dfanswer_push (char const *s, size_t len, uint32_t ip, uint16_t port)
 {
-  if (len > 510)
+  if (len > 512)
   {
     if (verbosity)
       strerr_warnw1x("answer too big, dropping - enable truncation to avoid this") ;
   }
   else
   {
-    dfanswer_t ans = { .port = port } ;
-    uint16_pack_big(ans.buf, len) ;
-    memcpy(ans.buf + 2, s+2, len) ;
-    uint32_pack_big(ans.ip, ip) ;
-    if (!genqdyn_push(&dfanswers, &ans))
-      strerr_diefu1sys(111, "queue answer to client") ;
+    if (!stralloc_readyplus(&q, len + 8)) strerr_diefu1sys(111, "queue answer to client") ;
+    uint32_pack_big(q.s + q.len, ip) ; q.len += 4 ;
+    uint16_pack_big(q.s + q.len, port) ; q.len += 2 ;
+    uint16_pack_big(q.s + q.len, len) ; q.len += 2 ;
+    memcpy(q.s + q.len, s, len) ; q.len += len ;
   }
 }
 
@@ -53,19 +46,25 @@ int dfanswer_flush ()
 {
   while (dfanswer_pending())
   {
-    dfanswer_t *ans = GENQDYN_PEEK(dfanswer_t, &dfanswers) ;
-    uint16_t len ;
-    uint16_unpack_big(ans->buf, &len) ;
-    if (socket_send4(0, ans->buf, len, ans->ip, ans->port) < 0)
+    uint16_t port, len ;
+    uint16_unpack_big(q.s + head + 4, &port) ;
+    uint16_unpack_big(q.s + head + 6, &len) ;
+    if (socket_send4(0, q.s + head + 8, len, q.s + head, port) < 0)
       return error_isagain(errno) ? (errno = 0, 0) : -1 ;
-    genqdyn_pop(&dfanswers) ;
+    head += len + 8 ;
+    if ((q.len - head) >> 2 <= q.len)
+    {
+      memmove(q.s, q.s + head, q.len - head) ;
+      q.len -= head ;
+      head = 0 ;
+    }
   }
   return 1 ;
 }
 
 void dfanswer_fail (dfquery_t const *q)
 {
-  char buf[510] ;
+  char buf[512] ;
   uint16_t len ;
   s6dns_message_header_t hdr ;
   uint16_unpack_big(q->dt.sa.s, &len) ;
@@ -85,7 +84,7 @@ void dfanswer_fail (dfquery_t const *q)
 
 void dfanswer_nxdomain (dfquery_t const *q)
 {
-  char buf[510] ;
+  char buf[512] ;
   uint16_t len ;
   s6dns_message_header_t hdr ;
   uint16_unpack_big(q->dt.sa.s, &len) ;
@@ -105,7 +104,7 @@ void dfanswer_nxdomain (dfquery_t const *q)
 
 void dfanswer_nodata (dfquery_t const *q)
 {
-  char buf[510] ;
+  char buf[512] ;
   uint16_t len ;
   s6dns_message_header_t hdr ;
   uint16_unpack_big(q->dt.sa.s, &len) ;
