@@ -29,7 +29,7 @@ queries, the responses, or both.
 <h2> Interface </h2>
 
 <pre>
-     dnsfunneld [ -v <em>verbosity</em> ] [ -1 ] [ -U | -u <em>uid</em> -g <em>gid</em> ] [ -i <em>ip</em>:<em>port</em> ] [ -R <em>root</em> ] [ -b <em>bufsize</em> ] [ -t <em>globaltimeout</em> ] [ -X | -x ] [ -N | -n ]
+     dnsfunneld [ -v <em>verbosity</em> ] [ -1 ] [ -U | -u <em>uid</em> -g <em>gid</em> ] [ -i <em>ip</em> ] [ -p <em>port</em> ] [ -R <em>root</em> ] [ -b <em>bufsize</em> ] [ -t <em>globaltimeout</em> ] [ -X | -x ] [ -N | -n ]
 </pre>
 
 <ul>
@@ -85,9 +85,10 @@ in the GID environment variable, and drop privileges to that uid/gid. </li>
 <em>uid</em>. </li>
  <li> <tt>-g&nbsp;<em>gid</em></tt>&nbsp;: drop privileges to numerical gid
 <em>gid</em>. </li>
- <li> <tt>-i&nbsp;<em>ip</em>:<em>port</em></tt>&nbsp;: bind the socket to
-IPv4 <em>ip</em> and port <em>port</em>. Default for <em>ip</em> is
-<tt>127.0.0.1</tt>; default for <em>port</em> is 53. </li>
+ <li> <tt>-i&nbsp;<em>ip</em></tt>&nbsp;: bind the socket to
+IPv4 <em>ip</em>. Default is <tt>127.0.0.1</tt>. </li>
+ <li> <tt>-p&nbsp;<em>port</em></tt>&nbsp;: bind the socket to
+port <em>port</em>. Default is <tt>53</tt>. </li>
  <li> <tt>-R&nbsp;<em>root</em></tt>&nbsp;: chroot to <em>root</em>. Default
 is <tt>/run/dnsfunnel/root</tt>. Note that chrooting only increases security
 if privileges are also dropped via the <tt>-U</tt> or <tt>-u</tt> and <tt>-g</tt>

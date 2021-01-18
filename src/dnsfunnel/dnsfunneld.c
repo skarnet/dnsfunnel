@@ -37,7 +37,7 @@
 
 #include "dnsfunneld.h"
 
-#define USAGE "dnsfunneld [ -v verbosity ] [ -1 ] [ -U | -u uid -g gid ] [ -i ip:port ] [ -R root ] [ -b bufsize ] [ -t globaltimeout ] [ -X | -x ] [ -N | -n ]"
+#define USAGE "dnsfunneld [ -v verbosity ] [ -1 ] [ -U | -u uid -g gid ] [ -i ip ] [ -p port ] [ -R root ] [ -b bufsize ] [ -t globaltimeout ] [ -X | -x ] [ -N | -n ]"
 #define dieusage() strerr_dieusage(100, USAGE)
 
 #define DNSFUNNELD_INPUT_MAX 64
@@ -156,6 +156,15 @@ static inline void sanitize_and_new (char const *buf, unsigned int len, char con
   else query_new(&d, qtype, hdr.id, ip, port, 0) ;
 }
 
+static inline size_t ip40_scan (char const *s, char *ip)
+{
+  char t[4] ;
+  size_t l = ip4_scan(s, t) ;
+  if (!l || s[l]) return 0 ;
+  memcpy(ip, t, 4) ;
+  return l ;
+}
+
 int main (int argc, char const *const *argv)
 {
   int spfd = -1 ;
@@ -166,19 +175,17 @@ int main (int argc, char const *const *argv)
     int flagU = 0 ;
     uid_t uid = -1 ;
     gid_t gid = -1 ;
-    char const *ipport = "127.0.0.1:53" ;
     char const *root = "/run/dnsfunnel/root" ;
     int notif = 0 ;
     int fd ;
-    char ip[4] ;
-    size_t pos ;
     unsigned int t = 0 ;
-    uint16_t port ;
+    char ip[4] = { 127, 0, 0, 1 } ;
+    uint16_t port = 53 ;
     subgetopt_t l = SUBGETOPT_ZERO ;
 
     for (;;)
     {
-      int opt = subgetopt_r(argc, argv, "v:1Uu:g:i:R:b:t:XxNn", &l) ;
+      int opt = subgetopt_r(argc, argv, "v:1Uu:g:i:p:R:b:t:XxNn", &l) ;
       if (opt == -1) break ;
       switch (opt)
       {
@@ -187,7 +194,8 @@ int main (int argc, char const *const *argv)
         case 'U' : flagU = 1 ; break ;
         case 'u' : if (!uid0_scan(l.arg, &uid)) dieusage() ; break ;
         case 'g' : if (!gid0_scan(l.arg, &gid)) dieusage() ; break ;
-        case 'i' : ipport = l.arg ; break ;
+        case 'i' : if (!ip40_scan(l.arg, ip)) dieusage() ; break ;
+        case 'p' : if (!uint160_scan(l.arg, &port)) dieusage() ; break ;
         case 'R' : root = l.arg ; break ;
         case 'b' : if (!uint0_scan(l.arg, &bufsize)) dieusage() ; break ;
         case 't' : if (!uint0_scan(l.arg, &t)) dieusage() ; break ;
@@ -202,10 +210,6 @@ int main (int argc, char const *const *argv)
 
     if (t) tain_from_millisecs(&globaltto, t) ;
     else globaltto = tain_infinite_relative ;
-    pos = ip4_scan(ipport, ip) ;
-    if (!pos) dieusage() ;
-    if (ipport[pos] != ':') dieusage() ;
-    if (!uint160_scan(ipport + pos + 1, &port)) dieusage() ;
     if (fcntl(1, F_GETFD) < 0)
     {
       if (notif) strerr_dief1sys(100, "option -1 given but stdout unavailable") ;
