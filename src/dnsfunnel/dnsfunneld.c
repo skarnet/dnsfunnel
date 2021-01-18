@@ -31,6 +31,7 @@
 #include <skalibs/iopause.h>
 #include <skalibs/selfpipe.h>
 #include <skalibs/gensetdyn.h>
+#include <skalibs/random.h>
 
 #include <s6-dns/s6dns.h>
 
@@ -225,7 +226,7 @@ int main (int argc, char const *const *argv)
       strerr_diefu1sys(111, "move file descriptors") ;
     if (ndelay_on(0) < 0) strerr_diefu1sys(111, "turn stdin non-blocking") ;
     if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
-    if (!s6dns_init()) strerr_diefu1sys(111, "s6dns_init") ;
+    if (!random_init()) strerr_diefu1sys(111, "s6dns_init") ;
 
     if (root[0])
     {
