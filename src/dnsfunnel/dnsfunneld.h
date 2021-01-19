@@ -27,9 +27,9 @@ struct dfquery_s
 extern unsigned int verbosity ;
 extern size_t dfanswer_pending (void) ;
 extern int dfanswer_flush (void) ;
-extern void dfanswer_fail (dfquery_t const *) ;
-extern void dfanswer_nxdomain (dfquery_t const *) ;
-extern void dfanswer_nodata (dfquery_t const *) ;
+extern void dfanswer_fail (dfquery_t const *, int) ;
+extern void dfanswer_nxdomain (dfquery_t const *, int) ;
+extern void dfanswer_nodata (dfquery_t const *, int) ;
 extern void dfanswer_pass (dfquery_t const *, char *, unsigned int) ;
 
 

@@ -1,7 +1,5 @@
 /* ISC license. */
 
-#define DEBUG
-
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -13,6 +11,7 @@
 #include <skalibs/stralloc.h>
 #include <skalibs/socket.h>
 
+#include <s6-dns/s6dns-constants.h>
 #include <s6-dns/s6dns-message.h>
 
 #include "dnsfunneld.h"
@@ -62,11 +61,25 @@ int dfanswer_flush ()
   return 1 ;
 }
 
-void dfanswer_fail (dfquery_t const *q)
+static void switchaux (char *buf, uint16_t len)
+{
+  uint16_t qtype ;
+  uint16_unpack_big(buf + len - 4, &qtype) ;
+  switch (qtype)
+  {
+    case S6DNS_T_A : qtype = S6DNS_T_AAAA ; break ;
+    case S6DNS_T_AAAA : qtype = S6DNS_T_A ; break ;
+    default : strerr_dief1x(101, "can't happen: invalid qtype in auxiliary query") ;
+  }
+  uint16_pack_big(buf + len - 4, qtype) ;
+}
+
+
+void dfanswer_fail (dfquery_t const *q, int isaux)
 {
   char buf[512] ;
-  uint16_t len ;
   s6dns_message_header_t hdr ;
+  uint16_t len ;
   uint16_unpack_big(q->dt.sa.s, &len) ;
   memcpy(buf, q->dt.sa.s + 2, len) ;
   s6dns_message_header_unpack(buf, &hdr) ;
@@ -79,14 +92,15 @@ void dfanswer_fail (dfquery_t const *q)
   hdr.z = 0 ;
   hdr.rcode = 2 ;  /* servfail */
   s6dns_message_header_pack(buf, &hdr) ;
+  if (isaux) switchaux(buf, len) ;
   dfanswer_push(buf, len, q->ip, q->port) ;
 }
 
-void dfanswer_nxdomain (dfquery_t const *q)
+void dfanswer_nxdomain (dfquery_t const *q, int isaux)
 {
   char buf[512] ;
-  uint16_t len ;
   s6dns_message_header_t hdr ;
+  uint16_t len ;
   uint16_unpack_big(q->dt.sa.s, &len) ;
   memcpy(buf, q->dt.sa.s + 2, len) ;
   s6dns_message_header_unpack(buf, &hdr) ;
@@ -99,14 +113,15 @@ void dfanswer_nxdomain (dfquery_t const *q)
   hdr.z = 0 ;
   hdr.rcode = 3 ;  /* nxdomain */
   s6dns_message_header_pack(buf, &hdr) ;
+  if (isaux) switchaux(buf, len) ;
   dfanswer_push(buf, len, q->ip, q->port) ;
 }
 
-void dfanswer_nodata (dfquery_t const *q)
+void dfanswer_nodata (dfquery_t const *q, int isaux)
 {
   char buf[512] ;
-  uint16_t len ;
   s6dns_message_header_t hdr ;
+  uint16_t len ;
   uint16_unpack_big(q->dt.sa.s, &len) ;
   memcpy(buf, q->dt.sa.s + 2, len) ;
   s6dns_message_header_unpack(buf, &hdr) ;
@@ -119,6 +134,7 @@ void dfanswer_nodata (dfquery_t const *q)
   hdr.z = 0 ;
   hdr.rcode = 0 ;  /* success */
   s6dns_message_header_pack(buf, &hdr) ;
+  if (isaux) switchaux(buf, len) ;
   dfanswer_push(buf, len, q->ip, q->port) ;
 }
 

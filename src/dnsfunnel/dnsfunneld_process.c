@@ -104,23 +104,22 @@ static int input_event (dfquery_t const *q, unsigned int ev)
   } ;
   uint8_t b = *RINFO(q->procid - 1) ;
   uint8_t isaux = 3 * (b >> 7 != (extract_qtype(q) == S6DNS_T_AAAA)) ;
-  uint8_t state = (b >> isaux) & 7 ;
+  uint8_t state = b & 7 ;
   uint8_t c = table[state][ev + isaux] ;
   state = c & 7 ;
-  *RINFO(q->procid - 1) = (b & ~(7 << isaux)) | (state << isaux) ;
-  if (c & 0x10) dfanswer_fail(q) ;
-  if (c & 0x20) dfanswer_nxdomain(q) ;
-  if (c & 0x40) dfanswer_nodata(q) ;
-  if (c & 0x80) dfanswer_pass(q, s6dns_engine_packet(&q->dt), s6dns_engine_packetlen(&q->dt)) ;
+  *RINFO(q->procid - 1) = (b & 0xf8) | state ;
+  if (c & 0x10) dfanswer_fail(q, !!isaux) ;
+  if (c & 0x20) dfanswer_nxdomain(q, !!isaux) ;
+  if (c & 0x40) dfanswer_nodata(q, !!isaux) ;
   if (state >= 6) strerr_dief1x(101, "problem in main/aux transition table; please submit a bug-report.") ;
   if (state == 5) gensetdyn_delete(&rinfo, q->procid - 1) ;
-  return !!(c & 0xf0) ;
+  return !(c & 0x80) ;
 }
 
 void query_process_response_failure (uint32_t ops, dfquery_t const *q)
 {
   if (ops & 2 && q->procid && input_event(q, 0)) return ;
-  else dfanswer_fail(q) ;
+  else dfanswer_fail(q, 0) ;
 }
 
 void query_process_response_success (uint32_t ops, dfquery_t const *q)
@@ -129,7 +128,7 @@ void query_process_response_success (uint32_t ops, dfquery_t const *q)
   if (ops & 1 && s6dns_engine_packetlen(&q->dt) > 512)
   {
     unsigned int len = truncate_packet(s6dns_engine_packet(&q->dt), s6dns_engine_packetlen(&q->dt)) ;
-    if (!len) dfanswer_fail(q) ;
+    if (!len) dfanswer_fail(q, 0) ;
     else dfanswer_pass(q, s6dns_engine_packet(&q->dt), len) ;
   }
   else dfanswer_pass(q, s6dns_engine_packet(&q->dt), s6dns_engine_packetlen(&q->dt)) ;
