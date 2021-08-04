@@ -43,7 +43,7 @@
 #define DNSFUNNELD_INPUT_MAX 64
 
 unsigned int verbosity = 1 ;
-static tain_t globaltto ;
+static tain globaltto ;
 static int cont = 1 ;
 static s6dns_ip46list_t cachelist ;
 static uint32_t ops = 0 ;
@@ -53,7 +53,7 @@ static inline void X (void)
   strerr_dief1x(101, "internal inconsistency. Please submit a bug-report.") ;
 }
 
-static inline void s6dns_ip46list_copy (s6dns_ip46list_t *dst, ip46full_t const *src, size_t n)
+static inline void s6dns_ip46list_copy (s6dns_ip46list_t *dst, ip46full const *src, size_t n)
 {
   if (n >= S6DNS_MAX_SERVERS) n = S6DNS_MAX_SERVERS - 1 ;
   for (size_t i = 0 ; i < n ; i++)
@@ -69,7 +69,7 @@ static inline void s6dns_ip46list_copy (s6dns_ip46list_t *dst, ip46full_t const 
 static int load_cachelist (int initial)
 {
   char buf[4096] ;
-  ip46full_t list[S6DNS_MAX_SERVERS] ;
+  ip46full list[S6DNS_MAX_SERVERS] ;
   size_t n ;
   ssize_t r = openreadnclose_nb("caches", buf, 4095) ;
   if (r < 0) return -1 ;
@@ -124,7 +124,7 @@ void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, uint32_t i
     .dt = S6DNS_ENGINE_ZERO
   } ;
   s6dns_domain_t dd = *d ;
-  tain_t deadline ;
+  tain deadline ;
   uint32_t i ;
   if (!gensetdyn_new(&queries, &i))
     strerr_diefu1sys(111, "create new query") ;
@@ -181,7 +181,7 @@ int main (int argc, char const *const *argv)
     unsigned int t = 0 ;
     char ip[4] = { 127, 0, 0, 1 } ;
     uint16_t port = 53 ;
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
 
     for (;;)
     {
@@ -301,7 +301,7 @@ int main (int argc, char const *const *argv)
                   
   for (;;)                
   {
-    tain_t deadline = TAIN_INFINITE ;
+    tain deadline = TAIN_INFINITE ;
     uint32_t i = QUERY(sentinel)->next ;
     uint32_t j = 2 ;
     int r ;

@@ -16,7 +16,7 @@
 #define dieusage() strerr_dieusage(100, USAGE)
 
 
-static size_t parse_nameservers (ip46_t *list, char const *file, char const *ignore)
+static size_t parse_nameservers (ip46 *list, char const *file, char const *ignore)
 {
   static char const zero[SKALIBS_IP_SIZE] = { 0 } ;
   char buf[4096] ;
@@ -44,14 +44,14 @@ static size_t parse_nameservers (ip46_t *list, char const *file, char const *ign
 
 int main (int argc, char const *const *argv)
 {
-  ip46_t list[S6DNS_MAX_SERVERS] = { IP46_ZERO } ;
+  ip46 list[S6DNS_MAX_SERVERS] = { IP46_ZERO } ;
   char const *resolvconf = "/etc/resolv.conf" ;
   char const *cachelist = "/run/dnsfunnel/root/caches" ;
   char ignore[4] = "\177\0\0\1" ;
   size_t n ;
   PROG = "dnsfunnel-translate" ;
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     for (;;)
     {
       int opt = subgetopt_r(argc, argv, "i:o:x:", &l) ;
