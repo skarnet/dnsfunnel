@@ -60,6 +60,7 @@ static inline unsigned int truncate_packet (char *s, unsigned int olen)
       hdr.counts.an -= counts.an ;
       hdr.counts.ns -= counts.ns ;
       hdr.counts.nr -= counts.nr ;
+      hdr.tc = 1 ;
       s6dns_message_header_pack(s, &hdr) ;
       return pos ;
     }
