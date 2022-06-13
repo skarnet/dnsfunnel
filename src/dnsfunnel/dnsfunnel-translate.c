@@ -15,7 +15,6 @@
 #define USAGE "dnsfunnel-translate [ -i resolvconf ] [ -o cachelist ] [ -x ignoredip ]"
 #define dieusage() strerr_dieusage(100, USAGE)
 
-
 static size_t parse_nameservers (ip46 *list, char const *file, char const *ignore)
 {
   static char const zero[SKALIBS_IP_SIZE] = { 0 } ;
@@ -40,7 +39,6 @@ static size_t parse_nameservers (ip46 *list, char const *file, char const *ignor
   }
   return n ;
 }
-
 
 int main (int argc, char const *const *argv)
 {
