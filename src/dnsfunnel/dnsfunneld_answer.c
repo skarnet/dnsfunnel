@@ -7,7 +7,7 @@
 #include <skalibs/uint16.h>
 #include <skalibs/uint32.h>
 #include <skalibs/error.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/socket.h>
 

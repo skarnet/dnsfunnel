@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include <skalibs/uint16.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/gensetdyn.h>
 
 #include <s6-dns/s6dns-constants.h>

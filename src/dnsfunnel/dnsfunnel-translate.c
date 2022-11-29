@@ -6,7 +6,7 @@
 #include <skalibs/sgetopt.h>
 #include <skalibs/buffer.h>
 #include <skalibs/fmtscan.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/ip46.h>
 
