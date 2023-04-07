@@ -277,7 +277,7 @@ int main (int argc, char const *const *argv)
       sigemptyset(&set) ;
       sigaddset(&set, SIGTERM) ;
       sigaddset(&set, SIGHUP) ;
-      if (selfpipe_trapset(&set) < 0) strerr_diefu1sys(111, "trap signals") ;
+      if (!selfpipe_trapset(&set)) strerr_diefu1sys(111, "trap signals") ;
     }
     if (!gensetdyn_new(&queries, &sentinel))
       strerr_diefu1sys(111, "initialize query structure") ;
