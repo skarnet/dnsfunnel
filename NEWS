@@ -3,6 +3,7 @@ Changelog for dnsfunnel.
 In 0.0.1.5
 ----------
 
+ - Adaptation to skalibs-2.14.0.0.
  - Bugfixes.
 
 
