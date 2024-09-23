@@ -1,6 +1,12 @@
 Changelog for dnsfunnel.
 
-In 0.0.1.5
+In 0.0.1.7
+----------
+
+ - Align on rest of skaware.
+
+
+In 0.0.1.6
 ----------
 
  - Adaptation to skalibs-2.14.0.0.

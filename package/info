@@ -1,4 +1,4 @@
 package=dnsfunnel
-version=0.0.1.6
+version=0.0.1.7
 category=web
 package_macro_name=DNSFUNNEL
