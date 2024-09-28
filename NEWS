@@ -1,9 +1,9 @@
 Changelog for dnsfunnel.
 
-In 0.0.1.7
+In 0.0.2.0
 ----------
 
- - Align on rest of skaware.
+ - dnsfunneld can now listen on IPv6 addresses.
 
 
 In 0.0.1.6

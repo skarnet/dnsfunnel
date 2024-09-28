@@ -25,7 +25,7 @@ void query_process_reload ()
 {
 }
 
-void query_process_question (uint32_t ops, s6dns_domain_t const *d, uint16_t qtype, uint16_t id, uint32_t ip, uint16_t port)
+void query_process_question (uint32_t ops, s6dns_domain_t const *d, uint16_t qtype, uint16_t id, char const *ip, uint16_t port)
 {
   if (ops & 2 && (qtype == S6DNS_T_A || qtype == S6DNS_T_AAAA))
   {

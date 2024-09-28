@@ -31,6 +31,7 @@
 #include <skalibs/iopause.h>
 #include <skalibs/selfpipe.h>
 #include <skalibs/gensetdyn.h>
+#include <skalibs/ip46.h>
 
 #include <s6-dns/s6dns.h>
 
@@ -42,6 +43,8 @@
 #define DNSFUNNELD_INPUT_MAX 64
 
 unsigned int verbosity = 1 ;
+unsigned int ipsz = 4 ;
+
 static tain globaltto ;
 static int cont = 1 ;
 static s6dns_ip46list_t cachelist ;
@@ -110,14 +113,13 @@ static uint32_t sentinel ;
 #define inflight (gensetdyn_n(&queries) - 1)
 #define QUERY(i) GENSETDYN_P(dfquery_t, &queries, i)
 
-void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, uint32_t ip, uint16_t port, uint32_t procid)
+void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, char const *ip, uint16_t port, uint32_t procid)
 {
   dfquery_t q =
   {
     .next = QUERY(sentinel)->next,
     .xindex = 0,
     .procid = procid,
-    .ip = ip,
     .port = port,
     .id = id,
     .dt = S6DNS_ENGINE_ZERO
@@ -125,6 +127,7 @@ void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, uint32_t i
   s6dns_domain_t dd = *d ;
   tain deadline ;
   uint32_t i ;
+  memcpy(q.ip, ip, ipsz) ;
   if (!gensetdyn_new(&queries, &i))
     strerr_diefu1sys(111, "create new query") ;
   s6dns_domain_encode(&dd) ;
@@ -135,10 +138,9 @@ void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, uint32_t i
   QUERY(sentinel)->next = i ;
 }
 
-static inline void sanitize_and_new (char const *buf, unsigned int len, char const *ippack, uint16_t port)
+static inline void sanitize_and_new (char const *buf, unsigned int len, char const *ip, uint16_t port)
 {
   s6dns_domain_t d ;
-  uint32_t ip ;
   unsigned int pos ;
   s6dns_message_header_t hdr ;
   s6dns_message_counts_t counts ;
@@ -150,18 +152,8 @@ static inline void sanitize_and_new (char const *buf, unsigned int len, char con
    || hdr.counts.qd != 1 || hdr.counts.an || hdr.counts.ns || hdr.counts.nr
    || !s6dns_message_parse_question(&counts, &d, &qtype, buf, len, &pos))
     return ;
-  uint32_unpack_big(ippack, &ip) ;
   if (ops) query_process_question(ops, &d, qtype, hdr.id, ip, port) ;
   else query_new(&d, qtype, hdr.id, ip, port, 0) ;
-}
-
-static inline size_t ip40_scan (char const *s, char *ip)
-{
-  char t[4] ;
-  size_t l = ip4_scan(s, t) ;
-  if (!l || s[l]) return 0 ;
-  memcpy(ip, t, 4) ;
-  return l ;
 }
 
 int main (int argc, char const *const *argv)
@@ -178,9 +170,10 @@ int main (int argc, char const *const *argv)
     int notif = 0 ;
     int fd ;
     unsigned int t = 0 ;
-    char ip[4] = { 127, 0, 0, 1 } ;
-    uint16_t port = 53 ;
     subgetopt l = SUBGETOPT_ZERO ;
+    uint16_t port = 53 ;
+    ip46 ip ;
+    (void)ip46_from_ip4(&ip, IP4_LOCAL) ;
 
     for (;;)
     {
@@ -193,7 +186,7 @@ int main (int argc, char const *const *argv)
         case 'U' : flagU = 1 ; break ;
         case 'u' : if (!uid0_scan(l.arg, &uid)) dieusage() ; break ;
         case 'g' : if (!gid0_scan(l.arg, &gid)) dieusage() ; break ;
-        case 'i' : if (!ip40_scan(l.arg, ip)) dieusage() ; break ;
+        case 'i' : if (!ip46_scan(l.arg, &ip)) dieusage() ; break ;
         case 'p' : if (!uint160_scan(l.arg, &port)) dieusage() ; break ;
         case 'R' : root = l.arg ; break ;
         case 'b' : if (!uint0_scan(l.arg, &bufsize)) dieusage() ; break ;
@@ -214,13 +207,14 @@ int main (int argc, char const *const *argv)
       if (notif) strerr_dief1sys(100, "option -1 given but stdout unavailable") ;
     }
     else if (!notif) close(1) ;
-    fd = socket_udp4() ;
+    ipsz = ip46_is6(&ip) ? 16 : 4 ;
+    fd = socket_udp46(ip46_is6(&ip)) ;
     if (fd < 0) strerr_diefu1sys(111, "create UDP socket") ;
-    if (socket_bind4_reuse(fd, ip, port) < 0)
+    if (socket_bind46_reuse(fd, &ip, port) < 0)
     {
-      char fmti[IP4_FMT] ;
+      char fmti[IP46_FMT] ;
       char fmtp[UINT16_FMT] ;
-      fmti[ip4_fmt(fmti, ip)] = 0 ;
+      fmti[ip46_fmt(fmti, &ip)] = 0 ;
       fmtp[uint16_fmt(fmtp, port)] = 0 ;
       strerr_diefu4sys(111, "bind on ip ", fmti, " port ", fmtp) ;
     }
@@ -383,10 +377,10 @@ int main (int argc, char const *const *argv)
       uint32_t n = DNSFUNNELD_INPUT_MAX ;
       while (n--)
       {
-        char ip[4] ;
-        uint16_t port ;
         char buf[512] ;
-        ssize_t r = socket_recv4(0, buf, 512, ip, &port) ;
+        char ip[16] ;
+        uint16_t port ;
+        ssize_t r = ipsz == 16 ? socket_recv6(0, buf, 512, ip, &port) : socket_recv4(0, buf, 512, ip, &port) ;
         if (r < 0)
           if (error_isagain(errno)) break ;
           else strerr_diefu1sys(111, "socket_recv") ;

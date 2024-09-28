@@ -34,8 +34,8 @@ queries, the responses, or both.
 
 <ul>
  <li> dnsfunneld creates a UDP inet domain socket and binds it
-to IPv4 address <em>ip</em> (normally 127.0.0.1) and port <em>port</em>
-(normally 53). </li>
+to IP (v4 or v6) address <em>ip</em> (by default 127.0.0.1) and
+port <em>port</em> (normally 53). </li>
  <li> Depending on the options it has been given, it may chroot and lose
 privileges on its gid and uid. </li>
  <li> It reads the <tt>caches</tt> file (relative to its current
@@ -86,7 +86,7 @@ in the GID environment variable, and drop privileges to that uid/gid. </li>
  <li> <tt>-g&nbsp;<em>gid</em></tt>&nbsp;: drop privileges to numerical gid
 <em>gid</em>. </li>
  <li> <tt>-i&nbsp;<em>ip</em></tt>&nbsp;: bind the socket to
-IPv4 <em>ip</em>. Default is <tt>127.0.0.1</tt>. </li>
+IP address <em>ip</em>. Default is <tt>127.0.0.1</tt>. </li>
  <li> <tt>-p&nbsp;<em>port</em></tt>&nbsp;: bind the socket to
 port <em>port</em>. Default is <tt>53</tt>. </li>
  <li> <tt>-R&nbsp;<em>root</em></tt>&nbsp;: chroot to <em>root</em>. Default
@@ -201,6 +201,9 @@ changes on the <tt>/etc/resolv.conf</tt> file (via inotify or kqueue,
 depending on your system) and immediately calling
 <a href="dnsfunnel-translate.html">dnsfunnel-translate</a>, sending
 a SIGHUP to dnsfunneld, and forcefully overwriting <tt>/etc/resolv.conf</tt>. </li>
+ <li> dnsfunneld can also be used as a simple forwarder, for instance to
+transmit DNS queries arriving on an IPv6 address to a DNS cache that only
+listens to IPv4 addresses. </li>
  <li> It is easy to send a SIGHUP to dnsfunneld even without knowing its
 pid, if it is run under a process supervision system such as
 <a href="//skarnet.org/software/s6/">s6</a>. </li>
