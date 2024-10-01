@@ -33,6 +33,8 @@
 #include <skalibs/gensetdyn.h>
 #include <skalibs/ip46.h>
 
+#include <skalibs/lolstdio.h>
+
 #include <s6-dns/s6dns.h>
 
 #include "dnsfunneld.h"
@@ -303,6 +305,7 @@ int main (int argc, char const *const *argv)
     x[0].events = IOPAUSE_READ ;
     x[1].fd = 0 ;
     x[1].events = (cont ? IOPAUSE_READ : 0) | (dfanswer_pending() ? IOPAUSE_WRITE : 0) ;
+    LOLDEBUG("loop: cont = %d, x[1].events = %u, inflight = %zu, pendingbytes = %zu", cont, (unsigned int)x[1].events, inflight, dfanswer_pending()) ;
     if (!x[1].events && !inflight) break ;
 
     while (i != sentinel)
