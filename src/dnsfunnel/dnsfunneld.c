@@ -119,6 +119,7 @@ void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, char const
 {
   dfquery_t q =
   {
+    .prev = sentinel,
     .next = QUERY(sentinel)->next,
     .xindex = 0,
     .procid = procid,
@@ -132,12 +133,24 @@ void query_new (s6dns_domain_t const *d, uint16_t qtype, uint16_t id, char const
   memcpy(q.ip, ip, ipsz) ;
   if (!gensetdyn_new(&queries, &i))
     strerr_diefu1sys(111, "create new query") ;
+  LOLDEBUG("pid %lld: query_new(): created %u, inflight is %zu", getpid(), i, inflight) ;
   s6dns_domain_encode(&dd) ;
   tain_add_g(&deadline, &globaltto) ;
   if (!s6dns_engine_init_g(&q.dt, &cachelist, S6DNS_O_RECURSIVE, dd.s, dd.len, qtype, &deadline))
     strerr_diefu1sys(111, "start new query") ;
   *QUERY(i) = q ;
+  QUERY(q.next)->prev = i ;
   QUERY(sentinel)->next = i ;
+}
+
+uint32_t query_remove (uint32_t i)
+{
+  dfquery_t *q = QUERY(i) ;
+  uint32_t j = q->prev ;
+  QUERY(j)->next = q->next ;
+  QUERY(q->next)->prev = j ;
+  gensetdyn_delete(&queries, i) ;
+  return j ;
 }
 
 static inline void sanitize_and_new (char const *buf, unsigned int len, char const *ip, uint16_t port)
@@ -172,6 +185,7 @@ int main (int argc, char const *const *argv)
     int notif = 0 ;
     int fd ;
     unsigned int t = 0 ;
+    dfquery_t *p ;
     subgetopt l = SUBGETOPT_ZERO ;
     uint16_t port = 53 ;
     ip46 ip ;
@@ -277,8 +291,9 @@ int main (int argc, char const *const *argv)
     }
     if (!gensetdyn_new(&queries, &sentinel))
       strerr_diefu1sys(111, "initialize query structure") ;
-    *QUERY(sentinel) = dfquery_zero ;
-    QUERY(sentinel)->next = sentinel ;
+    p = QUERY(sentinel) ;
+    *p = dfquery_zero ;
+    p->prev = p->next = sentinel ;
     if (!query_process_init())
       strerr_diefu1sys(111, "initialize query processing") ;
     tain_now_set_stopwatch_g() ;
@@ -296,7 +311,6 @@ int main (int argc, char const *const *argv)
   for (;;)                
   {
     tain deadline = TAIN_INFINITE ;
-    uint32_t i = QUERY(sentinel)->next ;
     uint32_t j = 2 ;
     int r ;
     iopause_fd x[2 + inflight] ;
@@ -305,10 +319,10 @@ int main (int argc, char const *const *argv)
     x[0].events = IOPAUSE_READ ;
     x[1].fd = 0 ;
     x[1].events = (cont ? IOPAUSE_READ : 0) | (dfanswer_pending() ? IOPAUSE_WRITE : 0) ;
-    LOLDEBUG("loop: cont = %d, x[1].events = %u, inflight = %zu, pendingbytes = %zu", cont, (unsigned int)x[1].events, inflight, dfanswer_pending()) ;
+    LOLDEBUG("pid %lld: loop: cont = %d, x[1].events = %u, inflight = %zu, pendingbytes = %zu", (int64_t)getpid(), cont, (unsigned int)x[1].events, inflight, dfanswer_pending()) ;
     if (!x[1].events && !inflight) break ;
 
-    while (i != sentinel)
+    for (uint32_t i = QUERY(sentinel)->next ; i != sentinel ; i = QUERY(i)->next)
     {
       dfquery_t *q = QUERY(i) ;
       s6dns_engine_nextdeadline(&q->dt, &deadline) ;
@@ -317,7 +331,6 @@ int main (int argc, char const *const *argv)
       if (s6dns_engine_isreadable(&q->dt)) x[j].events |= IOPAUSE_READ ;
       if (s6dns_engine_iswritable(&q->dt)) x[j].events |= IOPAUSE_WRITE ;
       q->xindex = j++ ;
-      i = q->next ;
     }
 
     r = iopause_g(x, j, &deadline) ;
@@ -325,21 +338,16 @@ int main (int argc, char const *const *argv)
 
     if (!r) 
     {
-      i = QUERY(sentinel)->next ;
-      j = sentinel ;
-      while (i != sentinel)
+      for (uint32_t i = QUERY(sentinel)->next ; i != sentinel ; i = QUERY(i)->next)
       {
         dfquery_t *q = QUERY(i) ;
-        uint32_t k = q->next ;
         if (s6dns_engine_timeout_g(&q->dt))
         {
           query_process_response_failure(ops, q) ;
-          QUERY(j)->next = k ;
           stralloc_free(&q->dt.sa) ;
-          gensetdyn_delete(&queries, i) ;
+          LOLDEBUG("pid %lld: loop: query %u timed out", (int64_t)getpid(), i) ;
+          i = query_remove(i) ;
         }
-        else j = i ;
-        i = k ;
       }
       continue ;
     }
@@ -351,13 +359,10 @@ int main (int argc, char const *const *argv)
       int r = dfanswer_flush() ;
       if (r < 0) strerr_diefu1sys(111, "send DNS answer to client") ;
     }
-                        
-    i = QUERY(sentinel)->next ;
-    j = sentinel ;
-    while (i != sentinel)
+
+    for (uint32_t i = QUERY(sentinel)->next ; i != sentinel ; i = QUERY(i)->next)
     {
       dfquery_t *q = QUERY(i) ;
-      uint32_t k = q->next ;
       if (x[q->xindex].events && x[q->xindex].revents)
       {
         int r = s6dns_engine_event_g(&q->dt) ;
@@ -365,14 +370,12 @@ int main (int argc, char const *const *argv)
         {
           if (r > 0) query_process_response_success(ops, q) ;
           else query_process_response_failure(ops, q) ;
-          QUERY(j)->next = k ;
           if (r > 0) s6dns_engine_free(&q->dt) ;
           else stralloc_free(&q->dt.sa) ;
-          gensetdyn_delete(&queries, i) ;
+          LOLDEBUG("pid %lld: loop: query %u arrived", (int64_t)getpid(), i) ;
+          i = query_remove(i) ;
         }
-        else j = i ;
       }
-      i = k ;
     }
 
     if (x[1].revents & IOPAUSE_READ)

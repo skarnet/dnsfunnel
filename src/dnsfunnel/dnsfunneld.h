@@ -15,6 +15,7 @@
 typedef struct dfquery_s dfquery_t, *dfquery_t_ref ;
 struct dfquery_s
 {
+  uint32_t prev ;
   uint32_t next ;
   uint32_t xindex ;
   uint32_t procid ;
@@ -23,7 +24,7 @@ struct dfquery_s
   uint16_t id ;
   s6dns_engine_t dt ;
 } ;
-#define DFQUERY_ZERO { .next = 0, .xindex = 0, .procid = 0, .ip = { 0 }, .port = 0, .id = 0, .dt = S6DNS_ENGINE_ZERO }
+#define DFQUERY_ZERO { .prev = 0, .next = 0, .xindex = 0, .procid = 0, .ip = { 0 }, .port = 0, .id = 0, .dt = S6DNS_ENGINE_ZERO }
 
 extern unsigned int verbosity ;
 extern unsigned int ipsz ;
@@ -33,7 +34,6 @@ extern void dfanswer_fail (dfquery_t const *, int) ;
 extern void dfanswer_nxdomain (dfquery_t const *, int) ;
 extern void dfanswer_nodata (dfquery_t const *, int) ;
 extern void dfanswer_pass (dfquery_t const *, char *, unsigned int) ;
-
 
 extern void query_new (s6dns_domain_t const *, uint16_t, uint16_t, char const *, uint16_t, uint32_t) ;
 
