@@ -1,9 +1,10 @@
 Changelog for dnsfunnel.
 
-In 0.0.2.1
+In 0.0.3.0
 ----------
 
  - Bugfixes.
+ - pkg-config support.
 
 
 In 0.0.2.0

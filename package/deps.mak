@@ -7,7 +7,8 @@ src/dnsfunnel/dnsfunneld.o src/dnsfunnel/dnsfunneld.lo: src/dnsfunnel/dnsfunneld
 src/dnsfunnel/dnsfunneld_answer.o src/dnsfunnel/dnsfunneld_answer.lo: src/dnsfunnel/dnsfunneld_answer.c src/dnsfunnel/dnsfunneld.h
 src/dnsfunnel/dnsfunneld_process.o src/dnsfunnel/dnsfunneld_process.lo: src/dnsfunnel/dnsfunneld_process.c src/dnsfunnel/dnsfunneld.h
 
-dnsfunnel-translate: EXTRA_LIBS := -lskarnet
-dnsfunnel-translate: src/dnsfunnel/dnsfunnel-translate.o
-dnsfunneld: EXTRA_LIBS := -ls6dns -lskarnet ${SOCKET_LIB} ${SYSCLOCK_LIB}
-dnsfunneld: src/dnsfunnel/dnsfunneld.o src/dnsfunnel/dnsfunneld_answer.o src/dnsfunnel/dnsfunneld_process.o
+dnsfunnel-translate: EXTRA_LIBS :=
+dnsfunnel-translate: src/dnsfunnel/dnsfunnel-translate.o -lskarnet
+dnsfunneld: EXTRA_LIBS := ${SOCKET_LIB} ${SYSCLOCK_LIB}
+dnsfunneld: src/dnsfunnel/dnsfunneld.o src/dnsfunnel/dnsfunneld_answer.o src/dnsfunnel/dnsfunneld_process.o -ls6dns -lskarnet
+INTERNAL_LIBS :=
