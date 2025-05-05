@@ -35,6 +35,14 @@ TCP DNS transport. It was originally written to be used in the
 <a href="https://alpinelinux.org/">Alpine Linux</a> distribution.
 </p>
 
+<p>
+ A secondary use for dnsfunnel is to serve as a small forwarder for IPv6
+addresses when your DNS cache doesn't listen to IPv6, which is the case
+with e.g. djbdns's <a href="https://cr.yp.to/djbdns/dnscache.html">dnscache</a>.
+dnsfunnel can listen to ipv6, forward the queries to your IPv4 address where
+your real cache performs the resolution, and return the answer to your client.
+</p>
+
 <hr />
 
 <h2> Installation </h2>
