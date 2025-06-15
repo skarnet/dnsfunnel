@@ -30,8 +30,10 @@ in an UDP packet.
 
 <p>
  dnsfunnel is especially useful for distributions using the
-<a href="https://musl-libc.org">musl</a> libc, which does not support
-TCP DNS transport. It was originally written to be used in the
+<a href="https://musl-libc.org">musl</a> libc, which sometimes exposes
+bugs in common implementation of DNS caches. (Also, musl initially did not
+support TCP DNS transport, which was an additional argument for dnsfunnel
+that does.) dnsfunnel was originally written to be used in the
 <a href="https://alpinelinux.org/">Alpine Linux</a> distribution.
 </p>
 
