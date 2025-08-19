@@ -1,5 +1,11 @@
 Changelog for dnsfunnel.
 
+In 0.0.3.1
+----------
+
+ - Support for shared libraries on MacOS.
+
+
 In 0.0.3.0
 ----------
 
