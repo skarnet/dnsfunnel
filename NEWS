@@ -1,5 +1,12 @@
 Changelog for dnsfunnel.
 
+In 0.0.3.2
+----------
+
+ - Support for disabling RPATH at configure time.
+ - Adaptation to skalibs-2.15.0.0.
+
+
 In 0.0.3.1
 ----------
 
